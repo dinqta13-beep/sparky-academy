@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPARKY Teacher Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0f0e17;--card:#1a1833;--gold:#f5a623;--teal:#00d4c8;
+  --red:#e94560;--pur:#7b2fbe;--white:#fff;--light:#d4cfea;
+  --green:#10b981;--orange:#f59e0b;--dark:#0a0918;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--white);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;}
+
+/* ── AUTH ── */
+#auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;}
+#auth-box{background:var(--card);border:2px solid var(--gold);border-radius:10px;padding:36px 32px;width:100%;max-width:420px;text-align:center;}
+#auth-logo{font-size:32px;margin-bottom:8px;}
+#auth-title{color:var(--gold);font-size:14px;font-weight:900;letter-spacing:2px;margin-bottom:4px;}
+#auth-sub{color:var(--light);font-size:10px;letter-spacing:2px;margin-bottom:24px;opacity:.7;}
+.auth-tabs{display:flex;margin-bottom:20px;border:1.5px solid var(--gold);border-radius:4px;overflow:hidden;}
+.auth-tab{flex:1;background:transparent;border:none;color:var(--gold);font-weight:700;font-size:12px;letter-spacing:1px;padding:10px;cursor:pointer;transition:all .2s;}
+.auth-tab.active{background:var(--gold);color:var(--bg);}
+.auth-label{display:block;text-align:left;font-size:10px;letter-spacing:2px;color:var(--teal);font-weight:700;margin-bottom:5px;margin-top:14px;}
+.auth-input{width:100%;background:#0f0e17;border:1.5px solid #2a2550;border-radius:4px;color:#fff;font-size:14px;padding:10px 12px;outline:none;box-sizing:border-box;transition:border-color .2s;}
+.auth-input:focus{border-color:var(--gold);}
+.auth-btn{width:100%;margin-top:20px;background:var(--gold);color:var(--bg);font-weight:900;font-size:13px;letter-spacing:2px;border:none;border-radius:4px;padding:13px;cursor:pointer;transition:opacity .2s;}
+.auth-btn:hover{opacity:.85;}
+.auth-btn:disabled{opacity:.4;cursor:default;}
+#auth-msg{margin-top:12px;font-size:12px;min-height:18px;}
+#auth-msg.error{color:var(--red);}
+#auth-msg.ok{color:var(--green);}
+#auth-name-row{display:none;}
+.back-link{display:block;margin-top:16px;color:var(--light);font-size:11px;opacity:.6;text-decoration:none;letter-spacing:1px;}
+.back-link:hover{opacity:1;color:var(--gold);}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--dark);border-bottom:2px solid var(--gold);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-brand{color:var(--gold);font-weight:900;font-size:13px;letter-spacing:2px;}
+.topbar-sub{color:var(--light);font-size:10px;letter-spacing:1px;opacity:.6;}
+.topbar-user{display:flex;align-items:center;gap:12px;color:var(--light);font-size:12px;}
+.logout-btn{background:none;border:1px solid #444;color:var(--light);font-size:10px;padding:4px 10px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all .2s;}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* ── MAIN LAYOUT ── */
+.main{max-width:1100px;margin:0 auto;padding:28px 24px;}
+.page-title{font-size:22px;font-weight:900;color:var(--gold);margin-bottom:4px;}
+.page-sub{color:var(--light);font-size:12px;opacity:.7;margin-bottom:28px;}
+
+/* ── CLASSES GRID ── */
+.classes-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.section-title{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--teal);}
+.create-btn{background:var(--gold);color:var(--bg);font-weight:900;font-size:12px;letter-spacing:1px;border:none;border-radius:4px;padding:10px 20px;cursor:pointer;transition:opacity .2s;}
+.create-btn:hover{opacity:.85;}
+.classes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:32px;}
+.class-card{background:var(--card);border:1.5px solid #2a2550;border-radius:8px;padding:20px;}
+.class-card:hover{border-color:var(--gold);}
+.class-name{font-size:16px;font-weight:900;margin-bottom:6px;}
+.class-code-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.class-code{background:#0a0918;border:1.5px solid var(--teal);color:var(--teal);font-weight:900;font-size:16px;letter-spacing:4px;padding:6px 14px;border-radius:4px;font-family:monospace;}
+.copy-btn{background:none;border:1px solid var(--teal);color:var(--teal);font-size:10px;padding:5px 10px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all .2s;}
+.copy-btn:hover{background:var(--teal);color:var(--bg);}
+.class-meta{font-size:11px;color:var(--light);opacity:.6;}
+
+/* ── STUDENT TABLE ── */
+.student-section{margin-top:14px;}
+.student-section-title{font-size:10px;letter-spacing:2px;color:var(--light);opacity:.5;margin-bottom:8px;font-weight:700;}
+.student-table{width:100%;border-collapse:collapse;}
+.student-table th{font-size:9px;letter-spacing:2px;color:var(--teal);font-weight:700;padding:5px 8px;text-align:left;border-bottom:1px solid #2a2550;}
+.student-table td{padding:7px 8px;border-bottom:1px solid #1a1833;font-size:12px;}
+.student-table tr:last-child td{border-bottom:none;}
+.badge-dots{display:flex;gap:4px;flex-wrap:wrap;}
+.badge-dot{width:22px;height:22px;border-radius:50%;border:1.5px solid #444;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .2s;}
+.badge-dot.earned{border-color:transparent;}
+.progress-bar-wrap{background:#1a1833;border-radius:10px;height:6px;width:80px;}
+.progress-bar{background:var(--gold);border-radius:10px;height:6px;transition:width .4s;}
+.no-students{color:var(--light);font-size:12px;opacity:.5;padding:12px 0;font-style:italic;}
+
+/* ── CREATE CLASS MODAL ── */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:center;justify-content:center;padding:20px;}
+#modal-overlay.show{display:flex;}
+#modal-box{background:var(--card);border:2px solid var(--gold);border-radius:10px;padding:32px;max-width:400px;width:100%;}
+.modal-title{color:var(--gold);font-size:14px;font-weight:900;letter-spacing:2px;margin-bottom:20px;}
+.modal-input{width:100%;background:#0f0e17;border:1.5px solid #2a2550;border-radius:4px;color:#fff;font-size:14px;padding:10px 12px;outline:none;box-sizing:border-box;transition:border-color .2s;margin-bottom:16px;}
+.modal-input:focus{border-color:var(--gold);}
+.modal-btns{display:flex;gap:10px;}
+.modal-btn{flex:1;border:none;border-radius:4px;padding:12px;font-weight:900;font-size:12px;letter-spacing:1px;cursor:pointer;transition:opacity .2s;}
+.modal-btn.primary{background:var(--gold);color:var(--bg);}
+.modal-btn.secondary{background:transparent;border:1.5px solid #444;color:var(--light);}
+.modal-btn:hover{opacity:.85;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:48px 24px;color:var(--light);opacity:.5;}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-state p{font-size:13px;line-height:1.6;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;font-weight:700;font-size:12px;letter-spacing:1px;padding:12px 20px;border-radius:6px;display:none;z-index:9999;}
+
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #444;border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#f5a623">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SPARKY">
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-overlay">
+  <div id="auth-box">
+    <div id="auth-logo">🏫</div>
+    <div id="auth-title">TEACHER DASHBOARD</div>
+    <div id="auth-sub">SPARKY'S AI DETECTIVE ACADEMY</div>
+    <div class="auth-tabs">
+      <button id="tab-login" class="auth-tab active" onclick="switchTab('login')">LOG IN</button>
+      <button id="tab-signup" class="auth-tab" onclick="switchTab('signup')">SIGN UP</button>
+    </div>
+    <div id="auth-name-row">
+      <label class="auth-label">YOUR NAME</label>
+      <input id="auth-name" type="text" class="auth-input" placeholder="e.g. Ms Johnson">
+    </div>
+    <label class="auth-label">EMAIL</label>
+    <input id="auth-email" type="email" class="auth-input" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doAuth()">
+    <label class="auth-label">PASSWORD</label>
+    <input id="auth-pass" type="password" class="auth-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()">
+    <button id="auth-submit-btn" class="auth-btn" onclick="doAuth()">ENTER DASHBOARD ▶</button>
+    <div id="auth-msg"></div>
+    <a href="index.html" class="back-link">← Back to Academy</a>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar" id="main-topbar" style="display:none">
+  <div>
+    <div class="topbar-brand">🏫 TEACHER DASHBOARD</div>
+    <div class="topbar-sub">SPARKY'S AI DETECTIVE ACADEMY</div>
+  </div>
+  <div class="topbar-user">
+    <span id="teacher-name-display"></span>
+    <button class="logout-btn" onclick="doLogout()">LOG OUT</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main-content" style="display:none">
+  <div class="page-title">My Classes</div>
+  <div class="page-sub" id="main-sub">Loading your classes…</div>
+
+  <div class="classes-header">
+    <div class="section-title">YOUR CLASSES</div>
+    <button class="create-btn" onclick="openCreateModal()">+ CREATE NEW CLASS</button>
+  </div>
+
+  <div id="classes-container">
+    <div class="empty-state">
+      <div class="spinner"></div> Loading…
+    </div>
+  </div>
+</div>
+
+<!-- CREATE CLASS MODAL -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div class="modal-title">📋 CREATE NEW CLASS</div>
+    <label class="auth-label">CLASS NAME</label>
+    <input id="class-name-input" type="text" class="modal-input" placeholder="e.g. Year 5 — Group A" onkeydown="if(event.key==='Enter')createClass()">
+    <div class="modal-btns">
+      <button class="modal-btn secondary" onclick="closeModal()">CANCEL</button>
+      <button class="modal-btn primary" onclick="createClass()">CREATE ▶</button>
+    </div>
+    <div id="modal-msg" style="margin-top:10px;font-size:12px;color:var(--red);min-height:16px;"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://eaptfddbhuuvipnnjfnj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhcHRmZGRiaHV1dmlwbm5qZm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4ODgxMDIsImV4cCI6MjA5NjQ2NDEwMn0.YBnbdAflsf0Zv2IznWRWAAe9iLdoTYU0GFz5OKFU3Js';
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const BADGES = [
+  {emoji:'🔬',name:'What is AI?'},
+  {emoji:'🗄️',name:'How AI Learns'},
+  {emoji:'⭐',name:'STAR Prompts'},
+  {emoji:'🎨',name:'AI Creativity'},
+  {emoji:'🔍',name:'Fact Checking'},
+  {emoji:'🛡️',name:'Data Safety'},
+  {emoji:'🚦',name:'Safety System'},
+  {emoji:'🏆',name:'Master Case'},
+];
+
+let _teacher = null;
+let _authMode = 'login';
+
+// ── AUTH ──────────────────────────────────────────────────────
+function switchTab(mode){
+  _authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('tab-signup').classList.toggle('active', mode==='signup');
+  document.getElementById('auth-name-row').style.display = mode==='signup'?'block':'none';
+  document.getElementById('auth-submit-btn').textContent = mode==='login'?'ENTER DASHBOARD ▶':'CREATE ACCOUNT ▶';
+  setAuthMsg('','');
+}
+
+function setAuthMsg(msg,type){ const el=document.getElementById('auth-msg'); el.textContent=msg; el.className=type; }
+
+async function doAuth(){
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  const name  = document.getElementById('auth-name').value.trim();
+  const btn   = document.getElementById('auth-submit-btn');
+  if(!email||!pass){ setAuthMsg('Please fill in email and password.','error'); return; }
+  if(_authMode==='signup'&&!name){ setAuthMsg('Please enter your name.','error'); return; }
+  btn.disabled=true;
+  setAuthMsg('','');
+  let result;
+  if(_authMode==='login'){
+    result = await _sb.auth.signInWithPassword({email, password:pass});
+  } else {
+    result = await _sb.auth.signUp({email, password:pass, options:{data:{name, role:'teacher'}}});
+  }
+  btn.disabled=false;
+  if(result.error){ setAuthMsg(result.error.message,'error'); return; }
+  if(_authMode==='signup'&&!result.data.session){
+    setAuthMsg('✅ Account created! You can log in now.','ok');
+    switchTab('login'); return;
+  }
+  // Mark as teacher in profiles
+  if(_authMode==='signup'){
+    await _sb.from('profiles').update({role:'teacher', name}).eq('id', result.data.user.id);
+  }
+  onSignedIn(result.data.user);
+}
+
+async function onSignedIn(user){
+  _teacher = user;
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('main-topbar').style.display = 'flex';
+  document.getElementById('main-content').style.display = 'block';
+  const name = user.user_metadata?.name || user.email;
+  document.getElementById('teacher-name-display').textContent = '🏫 ' + name;
+  await loadClasses();
+}
+
+async function doLogout(){
+  await _sb.auth.signOut();
+  _teacher = null;
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('main-topbar').style.display = 'none';
+  document.getElementById('main-content').style.display = 'none';
+}
+
+// ── CLASSES ──────────────────────────────────────────────────
+async function loadClasses(){
+  document.getElementById('main-sub').textContent = '';
+  const {data:classes, error} = await _sb.from('classes')
+    .select('*').eq('teacher_id', _teacher.id).order('created_at');
+
+  if(error){ document.getElementById('classes-container').innerHTML='<p style="color:var(--red)">Error loading classes.</p>'; return; }
+
+  if(!classes || classes.length===0){
+    document.getElementById('classes-container').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>No classes yet!<br>Create your first class to get a code to share with students.</p>
+      </div>`;
+    return;
+  }
+
+  // Load all students for all classes
+  const classIds = classes.map(c=>c.id);
+  const {data:members} = await _sb.from('class_members').select('class_id, student_id').in('class_id', classIds);
+  const studentIds = [...new Set((members||[]).map(m=>m.student_id))];
+
+  let profiles={}, progress={}, badges={};
+  if(studentIds.length>0){
+    const {data:profs}  = await _sb.from('profiles').select('id,name,email').in('id',studentIds);
+    const {data:prog}   = await _sb.from('progress').select('student_id,case_number').in('student_id',studentIds);
+    const {data:bgs}    = await _sb.from('badges').select('student_id,badge_emoji').in('student_id',studentIds);
+    (profs||[]).forEach(p=>profiles[p.id]=p);
+    (prog||[]).forEach(p=>{ if(!progress[p.student_id]) progress[p.student_id]=new Set(); progress[p.student_id].add(p.case_number); });
+    (bgs||[]).forEach(b=>{ if(!badges[b.student_id]) badges[b.student_id]=new Set(); badges[b.student_id].add(b.badge_emoji); });
+  }
+
+  const html = classes.map(cls=>{
+    const classMembers = (members||[]).filter(m=>m.class_id===cls.id);
+    const studentCount = classMembers.length;
+
+    const studentRows = classMembers.length===0
+      ? `<div class="no-students">No students have joined yet — share the code below!</div>`
+      : classMembers.map(m=>{
+          const p = profiles[m.student_id] || {};
+          const name = p.name || p.email || 'Unknown';
+          const earned = badges[m.student_id] || new Set();
+          const casesCompleted = (progress[m.student_id] || new Set()).size;
+          const dots = BADGES.map(b=>{
+            const isEarned = earned.has(b.emoji);
+            return `<div class="badge-dot ${isEarned?'earned':''}" title="${b.name}" style="${isEarned?'background:'+badgeColor(b.emoji)+';':''}">${isEarned?b.emoji:'·'}</div>`;
+          }).join('');
+          const pct = Math.round(casesCompleted/8*100);
+          return `<tr>
+            <td><strong>${escHtml(name)}</strong></td>
+            <td><div class="badge-dots">${dots}</div></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+                <span style="font-size:11px;color:var(--light);opacity:.7">${casesCompleted}/8</span>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+
+    return `
+    <div class="class-card">
+      <div class="class-name">${escHtml(cls.class_name)}</div>
+      <div class="class-code-row">
+        <div class="class-code">${cls.class_code}</div>
+        <button class="copy-btn" onclick="copyCode('${cls.class_code}')">COPY</button>
+      </div>
+      <div class="class-meta">${studentCount} student${studentCount!==1?'s':''} enrolled</div>
+      <div class="student-section">
+        <div class="student-section-title">STUDENT PROGRESS</div>
+        ${classMembers.length>0 ? `
+        <table class="student-table">
+          <thead><tr>
+            <th>NAME</th>
+            <th>BADGES (1–8)</th>
+            <th>PROGRESS</th>
+          </tr></thead>
+          <tbody>${studentRows}</tbody>
+        </table>` : studentRows}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('classes-container').innerHTML = `<div class="classes-grid">${html}</div>`;
+}
+
+function badgeColor(emoji){
+  const map={'🔬':'#00d4c8','🗄️':'#7b2fbe','⭐':'#f5a623','🎨':'#10b981','🔍':'#e94560','🛡️':'#f59e0b','🚦':'#00d4c8','🏆':'#f5a623'};
+  return map[emoji]||'#444';
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── CREATE CLASS ─────────────────────────────────────────────
+function openCreateModal(){
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('class-name-input').value='';
+  document.getElementById('modal-msg').textContent='';
+  setTimeout(()=>document.getElementById('class-name-input').focus(),100);
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('show'); }
+
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code='';
+  for(let i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+
+async function createClass(){
+  const name = document.getElementById('class-name-input').value.trim();
+  if(!name){ document.getElementById('modal-msg').textContent='Please enter a class name.'; return; }
+
+  // Generate unique code
+  let code, tries=0;
+  do { code=genCode(); tries++; } while(tries<10);
+
+  const {error} = await _sb.from('classes').insert({
+    teacher_id: _teacher.id,
+    class_name: name,
+    class_code: code
+  });
+
+  if(error){ document.getElementById('modal-msg').textContent='Error: '+error.message; return; }
+
+  closeModal();
+  showToast('Class created! Code: ' + code);
+  await loadClasses();
+}
+
+// ── UTILS ────────────────────────────────────────────────────
+function copyCode(code){
+  navigator.clipboard.writeText(code).then(()=>showToast('Code '+code+' copied to clipboard!'));
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  setTimeout(()=>t.style.display='none', 3000);
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+(async()=>{
+  const {data:{session}} = await _sb.auth.getSession();
+  if(session){ onSignedIn(session.user); }
+  else { document.getElementById('auth-overlay').style.display='flex'; }
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>

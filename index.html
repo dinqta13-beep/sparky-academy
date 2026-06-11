@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPARKY's AI Detective Academy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0f0e17;color:#fff;font-family:'Segoe UI',Arial,sans-serif;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.container{text-align:center;max-width:520px;width:100%;}
+.logo{font-size:64px;margin-bottom:16px;}
+.title{color:#f5a623;font-size:clamp(20px,5vw,32px);font-weight:900;letter-spacing:3px;margin-bottom:8px;}
+.sub{color:#d4cfea;font-size:12px;letter-spacing:3px;margin-bottom:48px;opacity:.7;}
+.divider{width:60px;height:2px;background:#f5a623;margin:0 auto 48px;}
+.lang-label{color:#00d4c8;font-size:10px;letter-spacing:3px;font-weight:700;margin-bottom:20px;}
+.buttons{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+.lang-btn{display:flex;flex-direction:column;align-items:center;gap:10px;
+  background:#1a1833;border:2px solid #2a2550;border-radius:10px;
+  padding:28px 36px;cursor:pointer;text-decoration:none;color:#fff;
+  transition:all .25s;min-width:180px;}
+.lang-btn:hover{border-color:#f5a623;transform:translateY(-3px);box-shadow:0 12px 32px rgba(245,166,35,.2);}
+.lang-btn .flag{font-size:40px;}
+.lang-btn .lang-name{font-size:18px;font-weight:900;letter-spacing:1px;color:#f5a623;}
+.lang-btn .lang-native{font-size:12px;color:#d4cfea;opacity:.7;letter-spacing:1px;}
+.teacher-link{display:inline-block;margin-top:24px;color:#d4cfea;font-size:11px;letter-spacing:2px;opacity:.45;text-decoration:none;border-bottom:1px solid transparent;transition:all .2s;}
+.teacher-link:hover{opacity:.9;color:#00d4c8;border-bottom-color:#00d4c8;}
+.footer{margin-top:48px;color:#d4cfea;font-size:10px;letter-spacing:2px;opacity:.4;}
+</style>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#f5a623">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SPARKY">
+</head>
+<body>
+<div class="container">
+  <div class="logo">🕵️</div>
+  <div class="title">SPARKY'S AI DETECTIVE ACADEMY</div>
+  <div class="sub">CHOOSE YOUR LANGUAGE / ИЗБЕРИ ЕЗИК</div>
+  <div class="divider"></div>
+  <div class="lang-label">SELECT LANGUAGE</div>
+  <div class="buttons">
+    <a class="lang-btn" href="SPARKY-EN.html">
+      <span class="flag">🇬🇧</span>
+      <span class="lang-name">English</span>
+      <span class="lang-native">English</span>
+    </a>
+    <a class="lang-btn" href="SPARKY-BG.html">
+      <span class="flag">🇧🇬</span>
+      <span class="lang-name">Български</span>
+      <span class="lang-native">Bulgarian</span>
+    </a>
+  </div>
+  <a href="teacher.html" class="teacher-link">🏫 Teacher Dashboard</a>
+  <div class="footer">KALINA'S AI KIDS ACADEMY  •  AGES 9–12</div>
+</div>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
